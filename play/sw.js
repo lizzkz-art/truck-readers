@@ -1,11 +1,11 @@
 // Truck Readers 3D service worker: caches every file (including the voice recordings) so the game works fully offline.
-const VERSION = 'tr3d-pages-p1-8bfd8db4da';
+const VERSION = 'tr3d-pages-p1-fadb92d532';
 const CACHE = 'truckreaders3d-' + VERSION;
 const AUDIO_CACHE = 'truckreaders3d-audio'; // voice clips are named by content, so they survive updates
 const ASSETS = [
   './', './index.html', './manifest.json', './css/style.css',
   './js/game.js', './js/ui.js', './js/data.js', './js/stories.js', './js/icons.js', './js/readaloud.js', './js/intent.js',
-  './js/world.js', './js/textures.js', './js/entities.js', './js/audio.js', './js/music.js', './js/speech.js', './js/save.js', './js/levels.js', './js/bank.js', './js/placement.js', './js/family.js', './js/fit.js',
+  './js/world.js', './js/textures.js', './js/entities.js', './js/audio.js', './js/music.js', './js/speech.js', './js/save.js', './js/levels.js', './js/bank.js', './js/placement.js', './js/family.js', './js/fit.js', './js/lang.js',
   './lib/three.module.js', './audio/index.json', './audio/silence.mp3',
   './fonts/lexend-latin-400-normal.woff2', './fonts/lexend-latin-700-normal.woff2', './fonts/opendyslexic-latin-400-normal.woff2', './fonts/opendyslexic-latin-700-normal.woff2',
   './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png',
