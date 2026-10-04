@@ -234,6 +234,11 @@ export function missionCheck(kind, lv, vlv, avoid = []) {
   if (kind === 'fuel') {
     if (lv >= 1) { const s = sentencesAt(Math.max(1, lv), 4).filter(x => !avoid.includes(x.a))[0] || SENT[0]; return { ...sentenceItem(s, 'fuel'), label: s.a, prompt: 'Read the can. Pick the word that fits.' }; }
   }
+  if (lv === 0 && kind !== 'stop' && Math.random() < 0.7) { // Letters first: hear a letter, tap it
+    const pool = shuffle(LETTERS.filter(l => !avoid.includes(l))); const l = pool[0] || 'B';
+    const others = shuffle(LETTERS.filter(x => x !== l)).slice(0, 2);
+    return { skill: 'letters', kind: 'hear', answer: l, choices: shuffle([l, ...others]), say: l.toLowerCase(), label: l, prompt: 'Find the letter you hear.' };
+  }
   if (lv === 0) { // Warm-Up: hear a truck word, tap its picture
     const pool = shuffle(vocabAt(0).filter(v => v.pic && !avoid.includes(v.w))); const v = pool[0] || vocabAt(0)[0];
     const others = shuffle(vocabAt(0).filter(x => x.pic && x.w !== v.w)).slice(0, 1);
