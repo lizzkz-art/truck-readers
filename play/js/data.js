@@ -302,3 +302,18 @@ export const GLOSSARY = {
 
 // compatibility names used by the shared screens
 export const VIRTUES = BADGES;
+
+// ---------- Simple mode for children who are just starting to read: one task at a time, spoken and shown with a picture ----------
+export const KID_ORDER = ["trailer", "fuel", "parts", "dump", "port", "trip"];
+export const KID = {
+  find: n => `Let’s find ${n}! Follow the arrow.`,
+  talk: "We are here! Tap the Talk button.",
+  back: n => `Go back to ${n}!`,
+  collect: { crate: "Let’s find a crate! Walk up to it.", cone: "Let’s find a cone! Walk up to it.", fuel: "Let’s find a fuel can! Walk up to it.", part: "Let’s find a truck part! Walk up to it." },
+  planks: "Put blocks in the glowing box! Tap Place.",
+  fill: "Put blocks in the glowing spot! Tap Place.",
+  reach: "Climb up to the crane!",
+  share: "Let’s visit the next stop!",
+  free: "You did it! Now you can build and drive anywhere.",
+  icons: { crate: "crate", cone: "cone", fuel: "fuel", part: "part", planks: "dump", fill: "crane", reach: "crane", share: "map" },
+};

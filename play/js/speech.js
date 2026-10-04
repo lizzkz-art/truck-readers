@@ -11,6 +11,7 @@ const A = typeof Audio !== 'undefined' ? new Audio() : null;
 if (A) { A.preload = 'auto'; A.preservesPitch = true; A.mozPreservesPitch = true; A.webkitPreservesPitch = true; }
 const SILENT = 'audio/silence.mp3';
 
+import { Lang, esSentence, esSpoken, LETTER_ES } from './lang.js';
 // Same text normalisation + hash as tools/gen_audio.py (keep in sync)
 export function normText(t) {
   return String(t).toLowerCase().replace(/[’‘`]/g, "'").replace(/[^a-z0-9' ]+/g, ' ').replace(/(^|\s)'+|'+(?=\s|$)/g, '$1').replace(/\s+/g, ' ').trim();
@@ -76,18 +77,35 @@ export const Speech = {
     
     const single = !/\s/.test(text.trim());
     const segs = [];
-    if (single) { const c = find('w|' + normText(text)) || find((o.voice || 'n') + '|' + normText(text)); segs.push({ s: text, off: text.indexOf(text.trim()), c }); }
-    else for (const { s, off } of sentences(text)) segs.push({ s, off, c: find((o.voice || 'n') + '|' + normText(s)) || (o.voice === 'm' ? find('n|' + normText(s)) : null) });
+    const mode = Lang.mode;
+    if (single) { const tk = text.trim(); const c = (mode === 'es' && /^[A-Za-z]$/.test(tk) && find('ew|' + tk.toLowerCase())) || find('w|' + normText(text)) || find((o.voice || 'n') + '|' + normText(text)); segs.push({ s: text, off: text.indexOf(tk), c, es: mode === 'es' && /^[A-Za-z]$/.test(tk) && !!find('ew|' + tk.toLowerCase()) }); }
+    else for (const { s, off } of sentences(text)) {
+      const en = { s, off, c: find((o.voice || 'n') + '|' + normText(s)) || (o.voice === 'm' ? find('n|' + normText(s)) : null) };
+      const es = mode !== 'en' ? esSentence(s) : null; const ec = es ? find('e|' + normText(es)) : null;
+      if (es && ec && mode === 'es') segs.push({ s: es, off, c: ec, es: true });
+      else if (es && ec && mode === 'both') { segs.push({ s: es, off, c: ec, es: true }); if (es !== s.trim()) segs.push(en); }
+      else segs.push(en);
+    }
     let i = 0;
     const next = () => {
       if (my !== job) return;
       if (i >= segs.length) { setPlaying(false); o.onEnd && o.onEnd(); return; }
       const seg = segs[i++];
       const after = () => { if (my !== job) return; fbTimer = setTimeout(next, i < segs.length ? 160 : 0); };
-      if (seg.c) this._playClip(seg, o, my, after, () => this._tts(seg, o, my, after));
-      else this._tts(seg, o, my, after);
+      if (seg.c) this._playClip(seg, seg.es ? { ...o, onWord: null } : o, my, after, () => this._tts(seg, o, my, after));
+      else { const parts = this._wordParts(seg); if (parts) this._playParts(parts, o, my, after, () => this._tts(seg, o, my, after)); else this._tts(seg, o, my, after); }
     };
     setPlaying(true); next();
+  },
+  // No recording of the whole sentence: stitch it from the recorded single words (still the natural voice).
+  _wordParts(seg) {
+    if (!clips) return null; const parts = [];
+    let ok = true; seg.s.replace(/\S+/g, (m, k) => { const n = normText(m); if (!n) return m; const c = find('w|' + n); if (!c) ok = false; else parts.push({ s: m, off: seg.off + k, c }); return m; });
+    return ok && parts.length ? parts : null;
+  },
+  _playParts(parts, o, my, done, fail) {
+    let i = 0; const step = () => { if (my !== job) return; if (i >= parts.length) return done(); const p = parts[i++]; this._playClip(p, o, my, () => { fbTimer = setTimeout(step, 70); }, () => { if (i === 1) fail(); else step(); }); };
+    step();
   },
   _rateFactor(o) { return Math.max(0.6, Math.min(1.35, (this.rate || 0.9) / 0.9)) * (o.slow ? 0.85 : 1); },
   _playClip(seg, o, my, done, fail) {

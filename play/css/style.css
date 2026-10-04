@@ -482,3 +482,26 @@ body.age-teen .gnext { background: #d6dbe2; color: #22262c; }
   .gobtn { bottom: calc(156px + var(--sab)); left: calc(14px + var(--sal)); width: 84px; height: 84px; font-size: 1em; }
 }
 @media (max-width: 380px) { #tracker.tr-closed .tr-pv { font-size: .98em; } }
+
+/* ---- Simple mode (kid) ---- */
+#kidbar { position: absolute; top: calc(8px + var(--sat)); left: calc(8px + var(--sal)); z-index: 3; display: grid; grid-template-columns: auto auto; gap: 6px 10px; align-items: center; background: var(--paper); border-radius: 26px; padding: 8px 12px 8px 8px; box-shadow: 0 4px 14px rgba(0,0,0,.28); border: 4px solid #ffc629; }
+#kidbar.hidden { display: none; }
+#kid-icon { width: 84px; height: 84px; border-radius: 20px; background: #eaf6ff; display: flex; align-items: center; justify-content: center; }
+#kid-icon img { width: 72px; height: 72px; image-rendering: pixelated; }
+#kid-say { width: 68px; height: 68px; border-radius: 50%; border: 4px solid #fff; background: #2e9d5b; color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 0 #1d6b3b; padding: 0; }
+#kid-say:active { transform: translateY(3px); box-shadow: 0 1px 0 #1d6b3b; }
+#kid-pips { grid-column: 1 / span 2; display: flex; gap: 6px; justify-content: center; min-height: 0; flex-wrap: wrap; }
+#kid-pips:empty { display: none; }
+#kid-pips i { width: 16px; height: 16px; border-radius: 50%; background: #d4dde6; border: 2px solid #8aa0b5; display: block; }
+#kid-pips i.on { background: #ffc629; border-color: #b8860b; }
+body.kid #tracker, body.kid #viewbtns, body.kid #stars, body.kid #wp-label, body.kid #blockname, body.kid #hotbar, body.kid #btn-break, body.kid #btn-place { display: none !important; }
+body.kid.kid-build #btn-place { display: block !important; }
+body.kid.kid-build #hotbar { display: flex !important; }
+body.kid #btn-menu { min-width: 64px; min-height: 64px; font-size: 1.1em; }
+body.kid #waypoint { top: calc(124px + var(--sat)); }
+body.kid #wp-arrow { width: 72px; height: 72px; font-size: 40px; }
+body.kid .gobtn { display: flex !important; }
+@media (orientation: landscape) and (max-height: 520px) {
+  body.kid #waypoint { top: calc(8px + var(--sat)); left: 58%; }
+  #kid-icon { width: 68px; height: 68px; } #kid-icon img { width: 58px; height: 58px; } #kid-say { width: 60px; height: 60px; }
+}

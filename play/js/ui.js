@@ -6,6 +6,7 @@ import { Speech } from './speech.js';
 import { Sound } from './audio.js';
 import { VIRTUES, FACTS, WORDS, GLOSSARY, QUESTS, QUEST_ORDER, PRACTICE, TRANSLATION, NPCS, PHRASES, NPC_VOICE, TALK, HELPER_QUEST } from './data.js';
 import { missionCheck } from './bank.js';
+import { Lang } from './lang.js';
 import { matchIntent } from './intent.js';
 import { Music } from './music.js';
 import { STORIES } from './stories.js';
@@ -24,7 +25,7 @@ export function h(tag, props = {}, ...kids) {
     if (k === 'class') e.className = v; else if (k === 'style') e.style.cssText = v;
     else if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else if (k === 'html') e.innerHTML = v; else e.setAttribute(k, v);
   }
-  for (const c of kids.flat()) if (c != null && c !== false) e.append(c.nodeType ? c : document.createTextNode(String(c)));
+  for (const c of kids.flat()) if (c != null && c !== false) e.append(c.nodeType ? c : document.createTextNode(Lang.tr(String(c))));
   return e;
 }
 const SPK = '<svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path fill="currentColor" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>';
@@ -38,6 +39,8 @@ export const band = () => { const p = activeProfile(); return ageBand(p ? p.age 
 export const readLv = () => clampLv(state.level.read);
 export const vocabLv = () => clampLv(state.level.vocab);
 export const preReader = () => readLv() === 0;
+// Simple mode: for young children who are just starting to read (a grown-up can turn it off in Game settings)
+export const kidMode = () => { const p = activeProfile(); return state.settings.simple !== false && (p ? p.age : 7) <= 6; };
 export const tier = () => textTier(readLv());
 // Age-appropriate feedback wording (warm for young kids, calm and grown-up for teens)
 export function applyBand() { const B = BAND_PHRASES[band()]; PHRASES.right = B.right; PHRASES.tryAgain = B.tryAgain; PHRASES.stepDone = B.stepDone; PHRASES.results = B.results; }
@@ -73,6 +76,7 @@ export function speakBtn(getText, o = {}) {
 }
 // Text split into tappable words; play() reads aloud and highlights each word.
 export function readable(text, o = {}) {
+  text = Lang.tr(text);
   const el = h('div', { class: 'readable' + (o.cls ? ' ' + o.cls : '') });
   const spans = []; const hl = new Set((o.highlight || []).map(x => x.toLowerCase()));
   text.replace(/\S+|\s+/g, (m, i) => {
@@ -653,7 +657,7 @@ export function settings(onBack) {
     tog('Extra letter and line spacing', 'spacing'), tog('Cream background behind text', 'cream'),
     h('h3', {}, 'Play'),
     tog('Big “Go” button (walks toward the next goal for you)', 'goButton', () => G.refreshGo && G.refreshGo()),
-    tog('Calm mode (less motion, softer sounds)', 'calm'), tog('Sound effects', 'sound'), tog('Background music', 'music'), range('Music volume', 'musicVol', 0, 1, 0.05),
+    tog('Simple screen for young children (one picture task, fewer buttons)', 'simple'), tog('Calm mode (less motion, softer sounds)', 'calm'), tog('Sound effects', 'sound'), tog('Background music', 'music'), range('Music volume', 'musicVol', 0, 1, 0.05),
     sel('Camera view', 'view', [['back', 'Behind me (see my character)'], ['front', 'Front view (camera looks at me)'], ['first', 'First person (through my eyes)']]),
     sel('Camera distance', 'zoom', [['close', 'Close'], ['normal', 'Normal'], ['far', 'Far']]),
     G.mode === 'play' ? h('div', { class: 'set' }, h('span', {}, 'Camera stuck or too close?'), h('button', { class: 'btn', onclick: tap(() => { closeScreen(true); G.setUIOpen(false); G.fixView(); }) }, '🎥 Fix my view')) : null,
@@ -787,6 +791,7 @@ export function reward(qid, onClose) {
   const Q = QUESTS[qid], v = VIRTUES.find(x => x.id === Q.badge); v.letter = v.name[0];
   const pop = h('div', { class: 'modal' }, h('div', { class: 'card reward' }, h('div', { class: 'bigstar' }, '★'), h('h3', {}, 'Mission complete!'),
     h('div', { class: 'row center' }, badgeSVG(v), h('div', {}, h('b', {}, v.name + ' badge'), h('div', { class: 'small muted' }, '+3 stars'))),
+    kidMode() ? h('div', { class: 'row' }, h('button', { class: 'btn primary huge', onclick: tap(() => { pop.remove(); G.setUIOpen(false); onClose && onClose(); }) }, '⭐ Yay!')) :
     h('div', { class: 'row' }, h('button', { class: 'btn primary big', onclick: tap(() => { pop.remove(); storyCheck(qid, onClose); }) }, 'Story Check ›'),
       h('button', { class: 'btn big', onclick: tap(() => { pop.remove(); G.setUIOpen(false); onClose && onClose(); }) }, 'Later'))));
   document.body.append(pop); G.setUIOpen(true); Sound.fanfare(); confetti(); sayLines([PHRASES.missionDone]);
@@ -816,7 +821,7 @@ export function readCheck(kind, label, onDone) {
     const r = (state.skills ||= {})[it.skill] ||= { best: 0, latest: 0, tries: 0, first: today(), last: today(), history: [] }; r.tries++; r.latest = ok ? 100 : 0; r.best = Math.max(r.best, r.latest); r.last = today(); r.lv = lv;
     state.xp = (state.xp || 0) + (ok ? 2 : 1); saveState();
     card.querySelectorAll('.choice').forEach(b => { b.disabled = true; if ((b.dataset.v || b.textContent) === it.answer) b.classList.add('right'); });
-    fbBox.append(feedback(ok, it.kind === 'picchoice' || it.kind === 'readpic' ? '' : it.answer, it.say), h('div', { class: 'row' }, h('button', { class: 'btn primary big', onclick: tap(() => { Speech.cancel(); closeScreen(true); onDone && onDone(true); }) }, 'Load it ›')));
+    fbBox.append(feedback(ok, it.kind === 'picchoice' || it.kind === 'readpic' ? '' : it.answer, it.say), h('div', { class: 'row' }, h('button', { class: 'btn primary big', onclick: tap(() => { Speech.cancel(); closeScreen(true); onDone && onDone(true); }) }, kidMode() ? '👍 ➜' : 'Load it ›')));
   };
   const btns = (choices, cls = '') => h('div', { class: 'choices letters ' + cls }, choices.map(c => { const b = h('button', { class: 'choice', 'data-v': c }, c); b.addEventListener('click', tap(() => answer(c, b))); return b; }));
   
@@ -842,7 +847,8 @@ export function readCheck(kind, label, onDone) {
 
 // ---------------- Menus ----------------
 export function backToMenu() { if (G.mode === 'title') title(); else pauseMenu(); }
-export function title() {
+export function title(force) {
+  if (kidMode() && !force) { closeScreen(true); G.startPlay(); return; }
   closeScreen(true); G.setUIOpen(true); const name = playerName(); const pre = preReader(), teen = band() === 'teen';
   const t = h('div', { class: 'screen title', id: 'screen' },
     h('div', { class: 'logo' }, h('div', { class: 'logo-main' }, 'Truck Readers'), h('div', { class: 'logo-sub' }, 'Build, read, and drive')),
@@ -861,6 +867,11 @@ export function title() {
 }
 export function pauseMenu() {
   const body = openScreen('Menu', { onBack: () => closeScreen(), backLabel: '‹ Back to game' });
+  if (kidMode()) {
+    const kb = (t, f, cls = 'big') => h('button', { class: 'btn ' + cls + ' kidmenu', onclick: tap(f) }, t);
+    body.append(h('div', { class: 'menu-grid wide' }, kb('▶ Keep playing', () => closeScreen(), 'primary huge'), kb('🔤 Letter games', gamesHub, 'big'), kb('🎥 Fix my view', () => { closeScreen(); G.fixView(); }, 'big fixview'), kb('🔒 Grown-ups', () => settingsGate(() => F.parentArea()), 'big')));
+    Speech.speak('Tap the big green button to keep playing.', {}); return;
+  }
   const b = (t, f, cls = 'big') => h('button', { class: 'btn ' + cls, onclick: tap(f) }, t); const pre = preReader();
   body.append(h('div', { class: 'menu-grid wide' }, b('Resume', () => closeScreen(), 'primary big'), b('🎥 Fix my view', () => { closeScreen(); G.fixView(); }, 'big fixview'), b(pre ? '🎵 Games' : 'Word Games', gamesHub), pre ? b('📖 Mission Stories', storyPicker) : b('Read It Aloud', readAloud), b('Say It With Me', () => practice()),
     b('Word Book', wordBook), b('Badges', journal), b('How to Play', howTo), b('Game settings', () => settingsGate(() => settings())), b('🔒 Parent area', () => settingsGate(() => F.parentArea())), b('👥 Switch player', F.whoIsPlaying), b('Title screen', () => { G.toTitle(); })));

@@ -4,7 +4,7 @@ export const PREFIX = 'truckreaders.';
 const META_KEY = PREFIX + 'profiles.v1';
 export const MAX_PROFILES = 6;
 const kState = id => PREFIX + 'p.' + id + '.state.v1', kWorld = id => PREFIX + 'p.' + id + '.world.v1';
-export const DEFAULT_SETTINGS = { music: true, musicVol: 0.4, bob: true, helperCheck: false, calm: false, sound: true, rate: 0.9, autoRead: true, sens: 1, font: 'lexend', textSize: 1, spacing: true, cream: true, autoJump: true, view: 'back', zoom: 'normal', goButton: false, schoolOrder: false };
+export const DEFAULT_SETTINGS = { music: true, musicVol: 0.4, bob: true, helperCheck: false, calm: false, simple: true, sound: true, rate: 0.9, autoRead: true, sens: 1, font: 'lexend', textSize: 1, spacing: true, cream: true, autoJump: true, view: 'back', zoom: 'normal', goButton: false, schoolOrder: false, simple: true };
 function freshLevel() { return { read: 1, vocab: 1, lock: false, how: null, history: [], upStreak: { read: 0, vocab: 0 }, lowStreak: { read: 0, vocab: 0 } }; }
 function fresh() { return { v: 2, settings: { ...DEFAULT_SETTINGS }, level: freshLevel(), focus: [], placement: null, time: 0, speechCount: 0, stars: 0, xp: 0, quests: {}, active: null, badges: {}, words: {}, quiz: {}, practice: {}, player: null, hotbar: 0, started: false }; }
 function readJSON(k, d) { try { const v = JSON.parse(localStorage.getItem(k) || 'null'); return v == null ? d : v; } catch (e) { return d; } }
@@ -20,8 +20,8 @@ export const getProfile = id => meta.list.find(p => p.id === id) || null;
 export function setActive(id) { meta.active = id; saveMeta(); }
 export function newId() { return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 // Create a profile with its starting level. Returns the profile.
-export function createProfile({ name, age, look, level }) {
-  const id = newId(); const p = { id, name: (name || '').trim().slice(0, 20) || ('Player ' + (meta.list.length + 1)), age: Number(age) || 7, look, created: new Date().toLocaleDateString('en-US') };
+export function createProfile({ name, age, look, level, lang }) {
+  const id = newId(); const p = { id, name: (name || '').trim().slice(0, 20) || ('Player ' + (meta.list.length + 1)), age: Number(age) || 7, look, lang: lang || 'en', created: new Date().toLocaleDateString('en-US') };
   meta.list.push(p); saveMeta();
   const st = fresh(); if (level) Object.assign(st.level, level);
   st.level.history.push({ d: p.created, read: st.level.read, vocab: st.level.vocab, why: level && level.how === 'quiz' ? 'Placement quiz' : 'Chosen by a parent' });

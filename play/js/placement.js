@@ -31,7 +31,7 @@ export const CFG = {
 // Age-typical level: age 5 = Level 2, age 6 = Level 4, age 7 = Level 6, age 8 = Level 8; ages 3 and 4 start at Warm-Up
 export const ageLevel = age => { const a = Number(age) || 5; return a <= 4 ? 0 : clampLv(Math.min(8, (a - 4) * 2)); };
 // Level suggestions used by "Choose a level" (unchanged)
-export function startLevels(age) { const a = Number(age) || 5; const read = a <= 4 ? 0 : a === 5 ? 1 : a === 6 ? 3 : a === 7 ? 5 : 6; return { read, vocab: Math.max(0, read - 1), phono: 0 }; }
+export function startLevels(age) { const a = Number(age) || 5; const read = a <= 5 ? 0 : a === 6 ? 1 : a === 7 ? 3 : 5; return { read, vocab: Math.max(0, read - 1), phono: 0 }; }
 // The quiz starts at the age-typical level so the first questions feel doable.
 export function quizStart(age) { const a = ageLevel(age); return { read: Math.max(1, Math.min(7, a)), vocab: Math.max(0, Math.min(7, a - 1)), phono: 0 }; }
 // Guess-adjusted accuracy: removes the share of right answers expected from pure guessing.

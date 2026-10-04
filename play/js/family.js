@@ -119,17 +119,24 @@ function lookPicker(look) {
   upd(); return el;
 }
 
+// ---------- Language picker (English / Español / both) ----------
+function langRow(cur, set) {
+  const row = h('div', { class: 'agepick langpick' }, [['en', 'English'], ['es', 'Español'], ['both', 'English + Español']].map(([v, t]) => h('button', { class: 'btn agebtn' + (v === cur ? ' on' : ''), 'data-lang': v, onclick: tap(e => { set(v); row.querySelectorAll('.agebtn').forEach(b => b.classList.toggle('on', b === e.currentTarget)); }) }, t)));
+  return row;
+}
 // ---------- Add player ----------
 export function addPlayer(onBack) {
-  const n = profiles().length + 1; const look = normLook({ skin: 1, hair: 1, shirt: (n - 1) % SHIRTS.length }); let age = 5;
-  const body = openScreen('Add a player', { onBack: onBack || whoIsPlaying });
+  const n = profiles().length + 1; const look = normLook({ skin: 1, hair: 1, shirt: (n - 1) % SHIRTS.length }); let age = 5, lang = 'en';
+  const body = openScreen('Add a player (grown-up screen)', { onBack: onBack || whoIsPlaying });
   const nameIn = h('input', { type: 'text', maxlength: '20', placeholder: 'Player ' + n, 'aria-label': 'Name', id: 'pname' });
   const ageRow = h('div', { class: 'agepick' }, AGES.map(a => h('button', { class: 'btn agebtn' + (a === age ? ' on' : ''), 'data-age': String(a), onclick: tap(e => { age = a; ageRow.querySelectorAll('.agebtn').forEach(b => b.classList.toggle('on', b === e.currentTarget)); }) }, String(a))));
   body.append(h('div', { class: 'card form' },
-    h('label', { class: 'set' }, h('span', {}, 'Name (optional)'), nameIn),
-    h('div', { class: 'set col' }, h('span', {}, 'Age'), ageRow, h('div', { class: 'muted small' }, 'Age sets where the placement quiz starts and how the game talks and looks. Reading level is set separately.')),
-    lookPicker(look)),
-    h('div', { class: 'row center' }, h('button', { class: 'btn primary big', 'data-act': 'next', onclick: tap(() => levelSetup({ draft: { name: nameIn.value, age, look } })) }, 'Next: starting level ›')));
+    h('label', { class: 'set' }, h('span', {}, 'Name'), nameIn),
+    h('div', { class: 'set col' }, h('span', {}, 'Age'), ageRow, h('div', { class: 'muted small' }, 'Ages 3 to 5 start with letters and sounds. You can change the level any time in the Parent area.')),
+    h('div', { class: 'set col' }, h('span', {}, 'Language'), langRow(lang, v => lang = v), h('div', { class: 'muted small' }, 'Español: spoken and shown in Spanish. Both: English on screen, every instruction spoken in Spanish and then English.')),
+    h('details', { class: 'lookdet' }, h('summary', {}, 'Change how the player looks (optional)'), lookPicker(look))),
+    h('div', { class: 'row center' }, h('button', { class: 'btn primary huge', 'data-act': 'start', onclick: tap(() => finishLevel({ draft: { name: nameIn.value, age, look, lang } }, { ...startLevels(age), how: 'age' }, null)) }, 'Start! ›')),
+    h('div', { class: 'row center' }, h('button', { class: 'btn small', 'data-act': 'next', onclick: tap(() => levelSetup({ draft: { name: nameIn.value, age, look, lang } })) }, 'Grown-up options: placement quiz or choose a level')));
 }
 
 // ---------- Level setup: choose or take the quiz ----------
@@ -308,12 +315,13 @@ function focusPanel(p) {
     h('div', { class: 'row center' }, h('button', { class: 'btn primary big', 'data-act': 'save', onclick: tap(() => { updateProfileState(p.id, s => { s.focus = [...f]; }); toast('Saved.'); parentArea(); }) }, 'Save')));
 }
 function editPanel(p) {
-  const look = { ...(p.look || {}) }; let age = p.age;
+  const look = { ...(p.look || {}) }; let age = p.age, lang = p.lang || 'en';
   const body = openScreen(`Edit ${p.name}`, { onBack: parentArea });
   const nameIn = h('input', { type: 'text', maxlength: '20', value: p.name, id: 'pname' });
   const ageSel = h('select', { id: 'page' }, AGES.map(a => { const o = h('option', { value: String(a) }, String(a)); if (a === age) o.selected = true; return o; })); ageSel.addEventListener('change', () => age = Number(ageSel.value));
   body.append(h('div', { class: 'card form' }, h('label', { class: 'set' }, h('span', {}, 'Name'), nameIn), h('label', { class: 'set' }, h('span', {}, 'Age'), ageSel),
     h('div', { class: 'muted small' }, 'Changing age changes the tone and look of the game, not the reading level.'),
+    h('div', { class: 'set col' }, h('span', {}, 'Language'), langRow(lang, v => lang = v)),
     lookPicker(look)),
-    h('div', { class: 'row center' }, h('button', { class: 'btn primary big', 'data-act': 'save', onclick: tap(() => { updateProfile(p.id, { name: nameIn.value.trim().slice(0, 20) || p.name, age, look }); if (activeProfile() && activeProfile().id === p.id) dirty = true; toast('Saved.'); parentArea(); }) }, 'Save')));
+    h('div', { class: 'row center' }, h('button', { class: 'btn primary big', 'data-act': 'save', onclick: tap(() => { updateProfile(p.id, { name: nameIn.value.trim().slice(0, 20) || p.name, age, look, lang }); if (activeProfile() && activeProfile().id === p.id) dirty = true; toast('Saved.'); parentArea(); }) }, 'Save')));
 }

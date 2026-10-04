@@ -2,7 +2,8 @@ import * as THREE from '../lib/three.module.js';
 import { makeAtlas, blockIcon } from './textures.js';
 import { World, W, D, H, CS, B, BLOCKS, PLACES, meshChunk, brookX } from './world.js';
 import * as E from './entities.js';
-import { NPCS, QUESTS, QUEST_ORDER, NPC_LINES, BLOCK_HOTBAR, HELLOS, PHRASES, TALK } from './data.js';
+import { NPCS, QUESTS, QUEST_ORDER, NPC_LINES, BLOCK_HOTBAR, HELLOS, PHRASES, TALK, KID, KID_ORDER } from './data.js';
+import { iconURL } from './icons.js';
 import { Music } from './music.js';
 import { state, loadState, saveState, loadWorldEdits, saveWorld, activeProfile } from './save.js';
 import { applyMissionTier } from './data.js';
@@ -442,6 +443,7 @@ function completeQuest(id) {
 }
 function startQuest(id) {
   state.active = id; const s = qs(id); s.started = true; saveState(); refreshMarkers();
+  if (UI.kidMode()) { G.setUIOpen(false); checkStep(); updateHUD(); return; }
   UI.newWords(id, () => { G.setUIOpen(false); checkStep(); updateHUD(); UI.toast('Mission started: ' + QUESTS[id].title); });
 }
 function questWorldChanged() { const st = curStep(); if (st && (st.type === 'planks' || st.type === 'fill')) checkStep(); }
@@ -507,7 +509,7 @@ function questTick() {
 }
 // ---------- Big "Go" button: walks toward the next goal (for young players or when turned on) ----------
 const auto = { on: false, t: 0, lastD: 1e9, stall: 0 };
-function goEnabled() { return clampLv(state.level.read) === 0 || !!state.settings.goButton; }
+function goEnabled() { return UI.kidMode() || clampLv(state.level.read) === 0 || !!state.settings.goButton; }
 function refreshGo() { const b = $('#btn-go'); if (b) b.classList.toggle('hidden', !goEnabled()); if (!goEnabled()) stopGo(); }
 function stopGo() { auto.on = false; const b = $('#btn-go'); if (b) b.classList.remove('on'); }
 function startGo() { const t = targetPos(); if (!t) { UI.toast('Nothing to walk to right now.'); return; } auto.on = true; auto.t = 0; auto.lastD = 1e9; auto.stall = 0; $('#btn-go').classList.add('on'); if (clampLv(state.level.read) === 0) Speech.speak('Here we go!', {}); }
@@ -522,6 +524,7 @@ function autoSteer(dt) {
 }
 function targetPos() {
   const st = curStep();
+  if (!st && UI.kidMode()) { const id = kidNext(); if (!id) return null; const n = npcs[QUESTS[id].npc]; return { x: n.grp.position.x, z: n.grp.position.z, y: n.grp.position.y, name: n.def.name }; }
   if (!st) { let best = null, bd = 1e9; for (const n of Object.values(npcs)) if (n.markerKind === '!') { const d = Math.hypot(n.grp.position.x - P.pos.x, n.grp.position.z - P.pos.z); if (d < bd) { bd = d; best = n; } } return best ? { x: best.grp.position.x, z: best.grp.position.z, y: best.grp.position.y, name: best.def.name } : null; }
   const npcPos = id => ({ x: npcs[id].grp.position.x, z: npcs[id].grp.position.z, y: npcs[id].grp.position.y, name: npcs[id].def.name });
   switch (st.type) {
@@ -542,7 +545,7 @@ function refreshMarkers() {
   const st = curStep();
   for (const n of Object.values(npcs)) {
     let kind = null; const qid = n.def.quest;
-    if (qid) { const s = state.quests[qid]; if (!(s && s.done) && state.active !== qid) kind = '!'; }
+    if (qid) { const s = state.quests[qid]; if (!(s && s.done) && state.active !== qid && (!UI.kidMode() || kidNext() === qid)) kind = '!'; }
     if (st && st.type === 'talk' && st.npc === n.def.id) kind = '?';
     if (st && st.type === 'share' && st.npcs.includes(n.def.id) && !qs(state.active).list.includes(n.def.id)) kind = 'deliver';
     if (kind !== n.markerKind) { if (n.marker) { n.grp.remove(n.marker); n.marker = null; } if (kind) { n.marker = E.makeMarker(kind); n.marker.position.y = n.grp.userData.lying ? 1.9 : 2.95; n.grp.add(n.marker); } n.markerKind = kind; }
@@ -552,7 +555,7 @@ function refreshMarkers() {
 // ---------- HUD ----------
 const hud = $('#hud');
 function updateHUD() {
-  const Q = curQ(); const tr = $('#tracker');
+  const Q = curQ(); const tr = $('#tracker'); updateKid();
   $('#starcount').textContent = state.stars;
   const key = Q ? state.active + ':' + qs(state.active).step : 'explore';
   if (!Q) { if (tr.dataset.k !== key) { tr.dataset.k = key; tr.innerHTML = `<button class="tr-say" aria-label="Hear it"><svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path fill="currentColor" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg></button><div class="tq">Explore!</div><div class="tstep">Find a person with a gold <b>!</b> and talk to them.</div>`; trDecorate(tr, ['Explore!', '']); trAutoShow(); } return; }
@@ -563,6 +566,38 @@ function updateHUD() {
   tr.innerHTML = `<button class="tr-say" aria-label="Hear it"><svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path fill="currentColor" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg></button><div class="tq">${Q.title}</div><ol class="tlist">${Q.steps.map((x, i) => `<li class="${i < s.step ? 'done' : i === s.step ? 'cur' : ''}"><span class="dot">${i < s.step ? '✓' : i + 1}</span><span>${x.text}${/[.!?]$/.test(x.text) ? '' : '.'}${i === s.step && x.label ? `<b class="tcount">${x.label}: ${n}/${c}</b>` : ''}</span></li>`).join('')}</ol><div class="tbar"><div style="width:${Math.round(frac * 100)}%"></div></div><button class="tr-replay" aria-label="Hear the mission again"><span aria-hidden="true">🔁</span> Hear the mission again</button>`;
   trDecorate(tr, trPillText(Q, st, n, c)); trAutoShow();
 }
+
+// ---------- Simple mode: one big picture task at a time, spoken automatically, repeated by one big speaker button ----------
+const kid = { key: '', text: '', spokenKey: '', pips: '' };
+function kidNext() { for (const id of KID_ORDER) if (!(state.quests[id] && state.quests[id].done)) return id; return null; }
+function kidInfo() {
+  const Q = curQ(), st = curStep(); const nm = id => npcs[id].def.name;
+  if (!Q) { const id = kidNext(); if (!id) return { key: 'free', text: KID.free, icon: 'face:dee' }; const n = QUESTS[id].npc; return { key: 'find:' + id, text: KID.find(nm(n)), icon: 'face:' + n }; }
+  if (!st) return { key: 'free', text: KID.free, icon: 'face:dee' };
+  const [n, c] = stepCount(st); const k = state.active + ':' + qs(state.active).step;
+  switch (st.type) {
+    case 'collect': return { key: k, text: KID.collect[st.item] || KID.collect.crate, icon: KID.icons[st.item], pips: [n, c] };
+    case 'planks': return { key: k, text: KID.planks, icon: KID.icons.planks, pips: [n, c] };
+    case 'fill': return { key: k, text: KID.fill, icon: KID.icons.fill, pips: [n, c] };
+    case 'reach': return { key: k, text: KID.reach, icon: KID.icons.reach };
+    case 'share': return { key: k, text: KID.share, icon: KID.icons.share, pips: [n, c] };
+    case 'talk': return { key: k, text: KID.back(nm(st.npc)), icon: 'face:' + st.npc };
+  }
+  return { key: 'free', text: KID.free, icon: 'face:dee' };
+}
+function updateKid() {
+  const on = UI.kidMode(); document.body.classList.toggle('kid', on);
+  const bar = $('#kidbar'); if (!bar) return;
+  if (!on || G.mode !== 'play') { bar.classList.add('hidden'); return; }
+  bar.classList.remove('hidden');
+  const info = kidInfo(); const st = curStep();
+  document.body.classList.toggle('kid-build', !!st && (st.type === 'planks' || st.type === 'fill'));
+  if (info.key !== kid.key) { kid.key = info.key; kid.text = info.text; $('#kid-icon').innerHTML = `<img alt="" src="${iconURL(info.icon)}">`; }
+  const pips = info.pips ? info.pips[1] > 12 ? '' : Array.from({ length: info.pips[1] }, (_, i) => `<i class="${i < info.pips[0] ? 'on' : ''}"></i>`).join('') : '';
+  if (pips !== kid.pips) { kid.pips = pips; $('#kid-pips').innerHTML = pips; }
+  if (kid.spokenKey !== kid.key && !uiOpen) { kid.spokenKey = kid.key; setTimeout(() => { if (kid.key === info.key && !uiOpen && G.mode === 'play') Speech.speak(kid.text, {}); }, 500); }
+}
+$('#kid-say').addEventListener('click', e => { e.preventDefault(); Sound.unlock(); Sound.click(); Speech.speak(kid.text || '', {}); });
 function trackerSay() { const st = curStep(); Speech.speak(st ? st.text + '.' : 'Find a person with a gold mark, and talk to them.', {}); }
 function bumpStars() { const el = $('#stars'); el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
 function flashTracker() { const el = $('#tracker'); el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
