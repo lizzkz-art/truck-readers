@@ -4,6 +4,7 @@ import { World, W, D, H, CS, B, BLOCKS, PLACES, meshChunk, brookX } from './worl
 import * as E from './entities.js';
 import { NPCS, QUESTS, QUEST_ORDER, NPC_LINES, BLOCK_HOTBAR, HELLOS, PHRASES, TALK, KID, KID_ORDER } from './data.js';
 import { iconURL } from './icons.js';
+import { Lang } from './lang.js';
 import { Music } from './music.js';
 import { state, loadState, saveState, loadWorldEdits, saveWorld, activeProfile } from './save.js';
 import { applyMissionTier } from './data.js';
@@ -516,7 +517,7 @@ function startGo() { const t = targetPos(); if (!t) { UI.toast('Nothing to walk 
 function autoSteer(dt) {
   const t = targetPos(); if (!t) { stopGo(); return false; }
   const dx = t.x - P.pos.x, dz = t.z - P.pos.z, d = Math.hypot(dx, dz);
-  if (d < 2.6) { stopGo(); const st = curStep(); if (clampLv(state.level.read) === 0) Speech.speak(st && st.type === 'talk' ? 'We are here! Tap Talk.' : 'We are here!', {}); return false; }
+  if (d < 2.6) { stopGo(); const st = curStep(); if (UI.kidMode() && t.name) { const n = Object.values(npcs).find(q => q.def.name === t.name); if (n && !uiOpen) { setTimeout(() => { if (UI.kidMode() && !uiOpen && G.mode === "play") talkTo(n); }, 500); return false; } } if (clampLv(state.level.read) === 0) Speech.speak(st && st.type === 'talk' ? 'We are here! Tap Talk.' : 'We are here!', {}); return false; }
   const want = Math.atan2(-dx, -dz); let diff = want - P.yaw; while (diff > Math.PI) diff -= 2 * Math.PI; while (diff < -Math.PI) diff += 2 * Math.PI;
   P.yaw += diff * Math.min(1, dt * 5); P.pitch += (-0.12 - P.pitch) * Math.min(1, dt * 3);
   auto.t += dt; if (auto.t > 1.5) { if (d > auto.lastD - 0.6) { auto.stall++; if (P.onGround) P.vel.y = 8.2; } else auto.stall = 0; auto.lastD = d; auto.t = 0; if (auto.stall >= 4) { stopGo(); UI.toast('The way is blocked. Try walking with the joystick.'); return false; } }
@@ -585,7 +586,11 @@ function kidInfo() {
   }
   return { key: 'free', text: KID.free, icon: 'face:dee' };
 }
+function applyLangDOM() {
+  for (const sel of ['#btn-menu', '#btn-go .lbl', '#btn-jump', '#btn-talk .lbl', '#btn-place', '#btn-break']) { const el = document.querySelector(sel); if (!el) continue; if (el.dataset.en == null) el.dataset.en = el.textContent; const t = Lang.tr(el.dataset.en); if (el.textContent !== t) el.textContent = t; }
+}
 function updateKid() {
+  applyLangDOM();
   const on = UI.kidMode(); document.body.classList.toggle('kid', on);
   const bar = $('#kidbar'); if (!bar) return;
   if (!on || G.mode !== 'play') { bar.classList.add('hidden'); return; }

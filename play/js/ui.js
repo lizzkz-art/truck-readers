@@ -6,7 +6,7 @@ import { Speech } from './speech.js';
 import { Sound } from './audio.js';
 import { VIRTUES, FACTS, WORDS, GLOSSARY, QUESTS, QUEST_ORDER, PRACTICE, TRANSLATION, NPCS, PHRASES, NPC_VOICE, TALK, HELPER_QUEST } from './data.js';
 import { missionCheck } from './bank.js';
-import { Lang } from './lang.js';
+import { Lang, NAMES_ES } from './lang.js';
 import { matchIntent } from './intent.js';
 import { Music } from './music.js';
 import { STORIES } from './stories.js';
@@ -684,14 +684,14 @@ export function dialog({ npc, name, lines, choice, onChoose, onDone, doneLabel, 
     const line = lines[i]; const narr = /^\s*\(/.test(line); const r = readable(line, { highlight: words, voice: narr ? 'n' : (NPC_VOICE[npc] || 'n'), cls: narr ? 'narration' : '' });
     const actions = h('div', { class: 'dlg-actions' });
     const last = i === lines.length - 1;
-    if (!last || !choice) actions.append(h('button', { class: 'btn primary big', onclick: tap(() => { Speech.cancel(); if (!last) { i++; render(); } else { close(); onDone && onDone(); } }) }, last ? (doneLabel || 'OK') : 'Next ›'));
+    if (!last || !choice) actions.append(h('button', { class: 'btn primary big', onclick: tap(() => { Speech.cancel(); if (!last) { i++; render(); } else { close(); onDone && onDone(); } }) }, kidMode() ? (last ? '👍' : '➜') : (last ? (doneLabel || 'OK') : 'Next ›')));
     else {
       const pr = readable(choice.prompt, { cls: 'prompt' });
       actions.append(pr.row, h('div', { class: 'dlg-choices' }, choice.options.map((o, k) => h('div', { class: 'choice-row' }, h('button', { class: 'choice', onclick: tap(() => { Speech.cancel(); onChoose(k); }) }, o.text), speakBtn(() => o.text)))));
     }
     // big Talk button while a character is speaking, so the Talk menu is always easy to find
-    const talkB = !noTalk && G.openTalk && NPCS.some(n => n.id === npc) ? h('button', { class: 'btn talkbtn dlg-talk', 'aria-label': 'Talk', html: '<span class="ico">💬</span><span>Talk</span>', onclick: tap(() => { Speech.cancel(); close(); G.openTalk(npc); }) }) : null;
-    box.append(h('div', { class: 'dlg-face' }, faceEl(npc), talkB), h('div', { class: 'dlg-body' }, h('div', { class: 'dlg-name' }, name, h('span', { class: 'muted small' }, lines.length > 1 ? `  ${i + 1}/${lines.length}` : '')), r.row, ref && last ? h('div', { class: 'ref' }, ref) : null, actions));
+    const talkB = !noTalk && !kidMode() && G.openTalk && NPCS.some(n => n.id === npc) ? h('button', { class: 'btn talkbtn dlg-talk', 'aria-label': 'Talk', html: '<span class="ico">💬</span><span>Talk</span>', onclick: tap(() => { Speech.cancel(); close(); G.openTalk(npc); }) }) : null;
+    box.append(h('div', { class: 'dlg-face' }, faceEl(npc), talkB), h('div', { class: 'dlg-body' }, h('div', { class: 'dlg-name' }, Lang.mode === 'es' ? (NAMES_ES[name] || name) : name, h('span', { class: 'muted small' }, lines.length > 1 && !kidMode() ? `  ${i + 1}/${lines.length}` : '')), r.row, ref && last ? h('div', { class: 'ref' }, ref) : null, actions));
     if (force) { if (Speech.available) r.play(); } else autoRead(r);
   }
   function close() { box.classList.add('hidden'); box.innerHTML = ''; G.setUIOpen(false); }

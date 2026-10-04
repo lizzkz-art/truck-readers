@@ -1,5 +1,5 @@
 // Truck Readers 3D service worker: caches every file (including the voice recordings) so the game works fully offline.
-const VERSION = 'tr3d-pages-p1-fadb92d532';
+const VERSION = 'tr3d-pages-p1-8fd59e6f99';
 const CACHE = 'truckreaders3d-' + VERSION;
 const AUDIO_CACHE = 'truckreaders3d-audio'; // voice clips are named by content, so they survive updates
 const ASSETS = [

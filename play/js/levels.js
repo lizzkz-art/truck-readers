@@ -4,14 +4,14 @@ export const LV_MAX = 8;
 export const LV_SHORT = ['Warm-Up', 'Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5', 'Level 6', 'Level 7', 'Level 8'];
 export const READ_DESC = [
   'Warm-Up: pre-reader. Letters, first sounds, rhymes, and truck pictures. Everything is read aloud; no reading needed.',
-  'Level 1: first sight words (go, stop, big, red, up, me, we, can).',
-  'Level 2: more first words (run, see, look, in, is, it, my, not, I, a).',
-  'Level 3: and, away, blue, come, down, find, for, help, here, jump.',
-  'Level 4: little, make, one, play, said, the, where, three, to, two, yellow, you, funny.',
-  'Level 5: kindergarten words like all, are, black, brown, good, have, like, out, please, pretty.',
-  'Level 6: harder kindergarten words like ride, saw, say, she, there, they, want, was, went, what, with.',
-  'Level 7: early first-grade words like of, as, his, her, him, had, has, by, or, if, how, your.',
-  'Level 8: first-grade challenge words like then, them, some, many, more, from, when, were, long, water.',
+  'Level 1: blending short words (bus, van, cab, mud, jet, tug, dig, box, log, sun). Listen, blend the sounds, and tap.',
+  'Level 2: first sight words (go, stop, big, red, up, me, we).',
+  'Level 3: more first words (run, see, look, in, is, it, my, not, I, a, can).',
+  'Level 4: and, away, blue, come, down, find, for, help, here, jump. Short sentences begin.',
+  'Level 5: little, make, one, play, said, the, where, three, to, two, yellow, you, funny.',
+  'Level 6: kindergarten words like all, are, black, brown, good, have, like, out, please, pretty.',
+  'Level 7: harder kindergarten words like ride, saw, say, she, there, they, want, was, went, what, with.',
+  'Level 8: early first-grade words like of, his, her, had, how, then, them, some, many, from, when, long, water.',
 ];
 export const VOCAB_DESC = [
   'Warm-Up: naming big vehicles and things (truck, bus, car, van).',

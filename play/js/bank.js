@@ -1,20 +1,22 @@
 // Truck Readers: leveled kindergarten sight-word banks and word-game builders.
-// Levels: 0 = Warm-Up (letters, sounds, pictures), 1..8 = Level 1..8. Pictures are emoji (drawn icons, no photos).
+// Levels: 0 = Warm-Up (letters, sounds, rhymes), 1 = blend short CVC words, 2..8 = sight words, sentences from Level 4. Pictures are emoji (drawn icons, no photos).
 export function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; }
 const pickN = (a, n) => shuffle(a).slice(0, n);
 const S = s => s.split(/\s+/).filter(Boolean);
 
 // ---------- Sight-word levels (pre-primer, primer, and early high-frequency words) ----------
-export const WL = {
-  1: S('go stop big red up me we can'),
-  2: S('run see look in is it my not I a'),
+// Reading path (from zero): Warm-Up = letters + first sounds + rhymes; Level 1 = blending short CVC words (bus, van, cab...);
+// Level 2+ = first sight words; sentences only appear much later (Level 4 and up).
+const SIGHT = {
+  1: S('go stop big red up me we'),
+  2: S('run see look in is it my not I a can'),
   3: S('and away blue come down find for help here jump'),
   4: S('little make one play said the where three to two yellow you funny'),
   5: S('all am are at ate be black brown but came did do eat four get good have he into like must new no now on our out please pretty'),
   6: S('ran ride saw say she so soon that there they this too under want was well went what white who will with yes'),
-  7: S('of as his her him had has by or if how your'),
-  8: S('then them some many more from when were been day way long made call first water time'),
+  7: S('of as his her him had has by or if how your then them some many more from when were been day way long made call first water time'),
 };
+export const WL = { 1: S('bus van cab mud jet tug dig box log sun nut bug bed hat map net ten fox pig cup pot pan'), 2: SIGHT[1], 3: SIGHT[2], 4: SIGHT[3], 5: SIGHT[4], 6: SIGHT[5], 7: SIGHT[6], 8: SIGHT[7] };
 export const LEVEL_OF = {}; for (const [lv, ws] of Object.entries(WL)) for (const w of ws) LEVEL_OF[w.toLowerCase()] = +lv;
 export const wordLevel = w => LEVEL_OF[String(w).toLowerCase()] || 0;
 export const wordsUpTo = lv => { const o = []; for (let l = 1; l <= Math.min(8, lv); l++) o.push(...WL[l]); return o; };
@@ -148,9 +150,9 @@ export const GAMES = [
   { id: 'rhyme', title: 'Rhyme Time', skill: 'rhyme', lv: [0, 2], pre: true, dir: 'Listen to the word. Tap the picture that rhymes with it.', tip: 'Rhyming words sound the same at the end, like cat and hat.' },
   { id: 'cvc', title: 'Missing Vowel', skill: 'cvc', lv: [1, 3], dir: 'Look at the picture. Pick the vowel that finishes the word.', tip: 'Say the word slowly: b - u - s.' },
   { id: 'hear', title: 'Hear and Tap', skill: 'hear', lv: [1, 8], dir: 'Listen to the word. Tap the word you hear.', tip: 'Tap the speaker to hear it again. Look at every letter.' },
-  { id: 'readpic', title: 'Picture Match', skill: 'readpic', lv: [1, 5], dir: 'Read the word. Tap the picture that matches it.', tip: 'Sound out the word. Then look for its picture.' },
-  { id: 'sight', title: 'Fill the Load', skill: 'sight', lv: [1, 8], dir: 'Read the sentence. Pick the word that fits in the blank.', tip: 'Read the whole sentence with your word in it.' },
-  { id: 'spell', title: 'Spell the Word', skill: 'spell', lv: [2, 8], dir: 'Listen to the word. Tap the letters in order to spell it.', tip: 'Say the word slowly. What sound do you hear first?' },
+  { id: 'readpic', title: 'Picture Match', skill: 'readpic', lv: [1, 6], dir: 'Read the word. Tap the picture that matches it.', tip: 'Sound out the word. Then look for its picture.' },
+  { id: 'sight', title: 'Fill the Load', skill: 'sight', lv: [4, 8], dir: 'Read the sentence. Pick the word that fits in the blank.', tip: 'Read the whole sentence with your word in it.' },
+  { id: 'spell', title: 'Spell the Word', skill: 'spell', lv: [1, 8], dir: 'Listen to the word. Tap the letters in order to spell it.', tip: 'Say the word slowly. What sound do you hear first?' },
   { id: 'vocab', title: 'Truck Words', skill: 'vocab', lv: [0, 8], vocab: true, pre: true, dir: 'Listen to the word. Tap the picture or meaning that matches.', tip: 'Tap a speaker to hear any answer.' },
 ];
 export const SKILL_NAMES = {
@@ -226,13 +228,18 @@ export function buildGame(id, readLv, vocabLv) {
 // Always forgiving: the answer is shown after a miss and the item still counts.
 export function missionCheck(kind, lv, vlv, avoid = []) {
   lv = Math.max(0, lv);
+  if (kind === 'part' && lv === 0) { // Warm-Up: hear the part name, tap its picture
+    const parts = shuffle(PARTS.filter(p => !avoid.includes(p) && PIC[p])); const w = parts[0] || 'wheel';
+    const others = shuffle(PARTS.filter(p => p !== w && PIC[p])).slice(0, 1);
+    return { skill: 'part', kind: 'picchoice', prompt: `Tap the ${w}.`, target: w, choices: shuffle([w, ...others]).map(picOpt), answer: w, say: w, word: w, label: w, noLabels: true };
+  }
   if (kind === 'part') {
     const parts = shuffle(PARTS.filter(p => !avoid.includes(p) && PIC[p])); const w = parts[0] || 'wheel';
     const others = shuffle(PARTS.filter(p => p !== w)).slice(0, lv <= 1 ? 1 : 2);
     return { skill: 'part', kind: 'readpic', word: w, answer: w, choices: shuffle([w, ...others]).map(picOpt), say: w, label: w, prompt: 'Read the label. Tap the matching part.' };
   }
   if (kind === 'fuel') {
-    if (lv >= 1) { const s = sentencesAt(Math.max(1, lv), 4).filter(x => !avoid.includes(x.a))[0] || SENT[0]; return { ...sentenceItem(s, 'fuel'), label: s.a, prompt: 'Read the can. Pick the word that fits.' }; }
+    if (lv >= 4) { const s = sentencesAt(Math.max(1, lv), 4).filter(x => !avoid.includes(x.a))[0] || SENT[0]; return { ...sentenceItem(s, 'fuel'), label: s.a, prompt: 'Read the can. Pick the word that fits.' }; }
   }
   if (lv === 0 && kind !== 'stop' && Math.random() < 0.7) { // Letters first: hear a letter, tap it
     const pool = shuffle(LETTERS.filter(l => !avoid.includes(l))); const l = pool[0] || 'B';
@@ -251,18 +258,18 @@ export function labelFor(kind, lv, avoid = []) { const it = missionCheck(kind, l
 
 // Read It Aloud words and sentences by reading level
 export const RA_SENTENCES = {
-  1: ['I can go.', 'Stop at red.', 'We see a big truck.', 'Look at me.'],
-  2: ['I see a red truck.', 'It is not big.', 'Look, a little truck.', 'The truck can run.'],
-  3: ['Come and help me.', 'The truck went down.', 'Jump up and find the key.', 'Here is a blue truck.'],
-  4: ['You can play with the truck.', 'Where is the little truck?', 'Make two yellow trucks.', 'The funny truck said hi.'],
-  5: ['The black truck came to eat.', 'I like the good brown truck.', 'We must get the new truck.', 'Please do not go out.'],
-  6: ['She saw the truck go under.', 'They want to ride soon.', 'What did the white truck say?', 'I will go with you.'],
-  7: ['How did his truck get here?', 'Her truck has a big wheel.', 'He had the key, or she did.', 'Is it your turn?'],
-  8: ['Then the truck went a long way.', 'We made a trip from town.', 'Many days went by on the road.', 'First call for the water truck.'],
+  1: [],
+  2: ['I can go.', 'Stop at red.', 'We see a big truck.', 'Look at me.'],
+  3: ['I see a red truck.', 'It is not big.', 'Look, a little truck.', 'The truck can run.'],
+  4: ['Come and help me.', 'The truck went down.', 'Jump up and find the key.', 'Here is a blue truck.'],
+  5: ['You can play with the truck.', 'Where is the little truck?', 'Make two yellow trucks.', 'The funny truck said hi.'],
+  6: ['The black truck came to eat.', 'I like the good brown truck.', 'We must get the new truck.', 'Please do not go out.'],
+  7: ['She saw the truck go under.', 'They want to ride soon.', 'What did the white truck say?', 'I will go with you.'],
+  8: ['How did his truck get here?', 'Her truck has a big wheel.', 'Then the truck went a long way.', 'We made a trip from town.'],
 };
 export function readAloudList(lv) {
   lv = Math.max(1, Math.min(8, lv));
-  return { words: shuffle([...new Set([...(WL[lv] || []), ...(WL[lv - 1] || [])].filter(w => w.length > 1))]).slice(0, 8), sentences: RA_SENTENCES[lv] };
+  return { words: shuffle([...new Set([...(WL[lv] || []), ...(WL[lv - 1] || [])].filter(w => w.length > 1))]).slice(0, 8), sentences: RA_SENTENCES[lv] || [] };
 }
 // Say It With Me words: [word, sound tags]
 const tagsOf = w => { const t = []; if (/r/.test(w)) t.push('r'); if (/l/.test(w)) t.push('l'); if (/s/.test(w)) t.push('s'); if (/th/.test(w)) t.push('th'); if (/^(bl|cl|fl|gr|tr|br|cr|dr|st|sl|pl)/.test(w)) t.push('bl'); return t; };

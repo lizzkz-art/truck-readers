@@ -358,7 +358,7 @@ body.tp #crosshair { display: none; }
 .gnext { display: inline-block; background: var(--gold); color: #3a2a00; font-weight: 700; font-size: .7em; border-radius: 8px; padding: 1px 8px; margin-bottom: 4px; }
 .pbtn.focus { border-color: var(--gold); }
 /* Big Go button (auto-walk) */
-.gobtn { position: absolute; left: calc(24px + var(--sal)); bottom: calc(96px + var(--sab)); width: 150px; height: 150px; border-radius: 50%; border: 5px solid #fff; background: #2e9d5b; color: #fff; font: inherit; font-size: 1.5em; font-weight: 700; box-shadow: 0 6px 0 #1d6b3c, 0 8px 18px rgba(0,0,0,.3); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 6; pointer-events: auto; }
+.gobtn { position: absolute; left: calc(24px + var(--sal)); bottom: calc(262px + var(--sab)); width: 150px; height: 150px; border-radius: 50%; border: 5px solid #fff; background: #2e9d5b; color: #fff; font: inherit; font-size: 1.5em; font-weight: 700; box-shadow: 0 6px 0 #1d6b3c, 0 8px 18px rgba(0,0,0,.3); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 6; pointer-events: auto; }
 .gobtn .ico { font-size: 1.6em; line-height: 1; }
 .gobtn.on { background: #e0752d; box-shadow: 0 6px 0 #9c4a14, 0 8px 18px rgba(0,0,0,.3); }
 .gobtn.on .lbl::after { content: ' (stop)'; font-size: .6em; }
@@ -476,8 +476,8 @@ body.age-teen .gnext { background: #d6dbe2; color: #22262c; }
   .tbtn { width: 56px; height: 56px; font-size: .68em; }
   .tbtn.talk { grid-column: 1 / span 3; width: auto; height: 46px; font-size: .85em; border-radius: 16px; }
   #hotbar { max-width: calc(100vw - 400px - var(--sal) - var(--sar)); padding: 3px; }
-  #hotbar .slot { width: 40px; height: 40px; }
-  #hotbar .slot img { width: 28px; height: 28px; }
+  #hotbar .slot { width: 44px; height: 44px; }
+  #hotbar .slot img { width: 30px; height: 30px; }
   #blockname { bottom: calc(56px + var(--sab)); }
   .gobtn { bottom: calc(156px + var(--sab)); left: calc(14px + var(--sal)); width: 84px; height: 84px; font-size: 1em; }
 }
